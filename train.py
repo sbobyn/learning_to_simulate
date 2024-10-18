@@ -30,7 +30,7 @@ def main():
     os.makedirs(args.output_path, exist_ok=True)
 
     dataset_name = args.data_path.split("/")[-1]
-    run_name = dataset_name + f"_{time.strftime('%Y/%m/%d_%H:%M:%S')}"
+    run_name = dataset_name + f"_{time.strftime('%Y-%m-%d_%H:%M:%S')}"
     config = vars(args)
     wandb.init(
         project="224w-gns",
