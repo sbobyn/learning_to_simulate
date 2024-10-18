@@ -136,19 +136,19 @@ def main():
                     rollout_dataset.metadata,
                 )
                 video_path = os.path.join(
-                    args.output_path, f"rollout_{total_batch}.gif"
+                    args.output_path, f"rollout_{total_batch}.mp4"
                 )
                 anim.save(
                     video_path,
                     writer="ffmpeg",
-                    fps=30,
+                    fps=120,
                 )
                 wandb.log(
                     {
                         "rollout": wandb.Video(
                             video_path,
-                            fps=30,
-                            format="gif",
+                            fps=120,
+                            format="mp4",
                         )
                     }
                 )
