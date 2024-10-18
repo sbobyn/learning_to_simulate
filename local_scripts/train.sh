@@ -1,6 +1,7 @@
 #!/bin/bash
 
-python train.py datasets/WaterDropSample \
+python train.py \
+    --data-path datasets/WaterDropSample \
     --output output \
     --epoch 1 \
     --eval-interval 100 \

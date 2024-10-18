@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 import torch
 import torch_geometric as pyg
@@ -14,7 +15,7 @@ import wandb
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("data_path")
+    parser.add_argument("--data-path", required=True)
     parser.add_argument("--epoch", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -28,12 +29,14 @@ def main():
 
     os.makedirs(args.output_path, exist_ok=True)
 
+    dataset_name = args.data_path.split("/")[-1]
+    run_name = dataset_name + f"_{time.strftime('%Y/%m/%d_%H:%M:%S')}"
+    config = vars(args)
     wandb.init(
         project="224w-gns",
-        config={
-            "learning_rate": 0.01,
-            "epochs": 10,
-        },
+        name=run_name,
+        tags=[dataset_name, "train"],
+        config=config,
     )
     assert wandb.run is not None
 
@@ -169,6 +172,8 @@ def main():
                 )
                 artifact.add_file(checkpt_path)
                 wandb.log_artifact(artifact)
+
+    wandb.finish()
 
 
 if __name__ == "__main__":
