@@ -141,13 +141,13 @@ def main():
                 anim.save(
                     video_path,
                     writer="ffmpeg",
-                    fps=10,
+                    fps=30,
                 )
                 wandb.log(
                     {
                         "rollout": wandb.Video(
                             video_path,
-                            fps=10,
+                            fps=30,
                             format="gif",
                         )
                     }
