@@ -23,8 +23,8 @@ module purge
 module load python
 source venv/bin/activate
 python train.py \
-    --data-path ${SCRATCH}/224w-gns/${dataset} \
-    --output ${SCRATCH}/224w-gns/${dataset} \
+    --data-path ${SCRATCH}/224w-gns/datasets/${dataset} \
+    --output ${SCRATCH}/224w-gns/datasets/${dataset} \
     --epoch 10 \
     --eval-interval 1000 \
     --vis-interval 1000 \
