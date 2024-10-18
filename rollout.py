@@ -15,10 +15,14 @@ def rollout(model, data, metadata, noise_std):
 
     for time in range(total_time - window_size):
         with torch.no_grad():
-            graph = dataset.preprocess(particle_type, traj[:, -window_size:], None, metadata, 0.0)
+            graph = dataset.preprocess(
+                particle_type, traj[:, -window_size:], None, metadata, 0.0
+            )
             graph = graph.to(device)
             acceleration = model(graph).cpu()
-            acceleration = acceleration * torch.sqrt(torch.tensor(metadata["acc_std"]) ** 2 + noise_std ** 2) + torch.tensor(metadata["acc_mean"])
+            acceleration = acceleration * torch.sqrt(
+                torch.tensor(metadata["acc_std"]) ** 2 + noise_std**2
+            ) + torch.tensor(metadata["acc_mean"])
 
             recent_position = traj[:, -1]
             recent_velocity = recent_position - traj[:, -2]
@@ -29,7 +33,8 @@ def rollout(model, data, metadata, noise_std):
     return traj
 
 
-simulator = model.LearnedSimulator()
-simulator = simulator.cuda()
-test_dataset = dataset.RolloutDataset("../datasets/WaterDrop", "valid")
-rollout(simulator, test_dataset[0], test_dataset.metadata, 0.0)
+# simulator = model.LearnedSimulator()
+# if torch.cuda.is_available():
+#     simulator = simulator.cuda()
+# test_dataset = dataset.RolloutDataset("../datasets/WaterDrop", "valid")
+# rollout(simulator, test_dataset[0], test_dataset.metadata, 0.0)
