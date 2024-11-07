@@ -1,0 +1,15 @@
+# pycaches
+__pycache__/
+**/__pycache__/
+
+# ipynb checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# don't track datasets (except sample)
+datasets/*
+!datasets/WaterDropSample/
+
+# output dir
+output/
+
