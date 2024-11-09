@@ -3,6 +3,8 @@ import torch
 import dataset
 import model
 
+BOUNDARY_PARTICLE = 3
+
 
 def rollout(model, data, metadata, noise_std):
     device = next(model.parameters()).device
@@ -23,6 +25,10 @@ def rollout(model, data, metadata, noise_std):
             acceleration = acceleration * torch.sqrt(
                 torch.tensor(metadata["acc_std"]) ** 2 + noise_std**2
             ) + torch.tensor(metadata["acc_mean"])
+
+            # Zero out the acceleration for boundary particles
+            mask = data["particle_type"] != BOUNDARY_PARTICLE
+            acceleration = acceleration * mask.unsqueeze(-1).float()
 
             recent_position = traj[:, -1]
             recent_velocity = recent_position - traj[:, -2]

@@ -13,10 +13,12 @@ class MLP(torch.nn.Module):
         super().__init__()
         self.layers = torch.nn.ModuleList()
         for i in range(layers):
-            self.layers.append(torch.nn.Linear(
-                input_size if i == 0 else hidden_size,
-                output_size if i == layers - 1 else hidden_size,
-            ))
+            self.layers.append(
+                torch.nn.Linear(
+                    input_size if i == 0 else hidden_size,
+                    output_size if i == layers - 1 else hidden_size,
+                )
+            )
             if i != layers - 1:
                 self.layers.append(torch.nn.ReLU())
         if layernorm:
@@ -54,7 +56,9 @@ class InteractionNetwork(pyg.nn.MessagePassing):
         return x
 
     def aggregate(self, inputs, index, dim_size=None):
-        out = torch_scatter.scatter(inputs, index, dim=self.node_dim, dim_size=dim_size, reduce="sum")
+        out = torch_scatter.scatter(
+            inputs, index, dim=self.node_dim, dim_size=dim_size, reduce="sum"
+        )
         return (inputs, out)
 
 
@@ -71,13 +75,15 @@ class LearnedSimulator(torch.nn.Module):
         super().__init__()
         self.window_size = window_size
         self.embed_type = torch.nn.Embedding(num_particle_types, particle_type_dim)
-        self.node_in = MLP(particle_type_dim + dim * (window_size + 2), hidden_size, hidden_size, 3)
+        self.node_in = MLP(
+            particle_type_dim + dim * (window_size + 2), hidden_size, hidden_size, 3
+        )
         self.edge_in = MLP(dim + 1, hidden_size, hidden_size, 3)
         self.node_out = MLP(hidden_size, hidden_size, dim, 3, layernorm=False)
         self.n_mp_layers = n_mp_layers
-        self.layers = torch.nn.ModuleList([InteractionNetwork(
-            hidden_size, 3
-        ) for _ in range(n_mp_layers)])
+        self.layers = torch.nn.ModuleList(
+            [InteractionNetwork(hidden_size, 3) for _ in range(n_mp_layers)]
+        )
 
         self.reset_parameters()
 
@@ -89,6 +95,8 @@ class LearnedSimulator(torch.nn.Module):
         node_feature = self.node_in(node_feature)
         edge_feature = self.edge_in(data.edge_attr)
         for i in range(self.n_mp_layers):
-            node_feature, edge_feature = self.layers[i](node_feature, data.edge_index, edge_feature=edge_feature)
+            node_feature, edge_feature = self.layers[i](
+                node_feature, data.edge_index, edge_feature=edge_feature
+            )
         out = self.node_out(node_feature)
         return out

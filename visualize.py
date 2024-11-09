@@ -18,7 +18,10 @@ def visualize_prepare(ax, particle_type, position, metadata):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_aspect(1.0)
-    points = {type_: ax.plot([], [], "o", ms=2, color=color)[0] for type_, color in TYPE_TO_COLOR.items()}
+    points = {
+        type_: ax.plot([], [], "o", ms=2, color=color)[0]
+        for type_, color in TYPE_TO_COLOR.items()
+    }
     return ax, position, points
 
 
@@ -35,7 +38,9 @@ def visualize_single(particle_type, position, metadata):
             outputs.append(line)
         return outputs
 
-    return animation.FuncAnimation(fig, update, frames=np.arange(0, position.size(0)), interval=10)
+    return animation.FuncAnimation(
+        fig, update, frames=np.arange(0, position.size(0)), interval=10
+    )
 
 
 def visualize_pair(particle_type, position_pred, position_gt, metadata):
@@ -56,4 +61,6 @@ def visualize_pair(particle_type, position_pred, position_gt, metadata):
             outputs.append(line)
         return outputs
 
-    return animation.FuncAnimation(fig, update, frames=np.arange(0, position_gt.size(0)), interval=10)
+    return animation.FuncAnimation(
+        fig, update, frames=np.arange(0, position_gt.size(0)), interval=10
+    )

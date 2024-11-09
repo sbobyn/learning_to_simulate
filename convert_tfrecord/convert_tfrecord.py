@@ -17,9 +17,15 @@ def main():
         metadata = json.load(f)
 
     for split in ["train", "valid", "test"]:
-        ds = tf.data.TFRecordDataset([os.path.join(args.data_path, f"{split}.tfrecord")])
-        ds = ds.map(functools.partial(
-            tfrecord_reading_utils.parse_serialized_simulation_example, metadata=metadata))
+        ds = tf.data.TFRecordDataset(
+            [os.path.join(args.data_path, f"{split}.tfrecord")]
+        )
+        ds = ds.map(
+            functools.partial(
+                tfrecord_reading_utils.parse_serialized_simulation_example,
+                metadata=metadata,
+            )
+        )
         data_shape = {}
         file_offset = {}
         for sample in ds.as_numpy_iterator():
@@ -34,7 +40,13 @@ def main():
                 else:
                     assert value.dtype == np.float32, value.dtype
                 mode = "r+" if os.path.exists(filename) else "w+"
-                array = np.memmap(filename, dtype=value.dtype, mode=mode, offset=offset * value.dtype.itemsize, shape=value.shape)
+                array = np.memmap(
+                    filename,
+                    dtype=value.dtype,
+                    mode=mode,
+                    offset=offset * value.dtype.itemsize,
+                    shape=value.shape,
+                )
                 array[:] = value
                 shape[key] = {"offset": offset, "shape": value.shape}
                 file_offset[key] = offset + value.size

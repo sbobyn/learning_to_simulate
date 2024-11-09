@@ -71,6 +71,9 @@ def train(
             if torch.cuda.is_available():
                 data = data.cuda()
             pred = simulator(data)
+            # zero out the acceleration for boundary particles
+            mask = data.x != 3
+            pred = pred * mask.unsqueeze(-1).float()
             loss = loss_fn(pred, data.y)
             loss.backward()
             optimizer.step()
