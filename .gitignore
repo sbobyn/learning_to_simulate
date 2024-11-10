@@ -10,6 +10,6 @@ __pycache__/
 datasets/*
 !datasets/WaterDropSample/
 
-# output dir
+# output dirs
 output/
-
+wandb/

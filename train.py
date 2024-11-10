@@ -4,6 +4,8 @@ import os
 import torch
 import torch_geometric as pyg
 from tqdm import tqdm
+import wandb
+import matplotlib
 
 import dataset
 import model
@@ -87,6 +89,7 @@ def train(
                     "lr": optimizer.param_groups[0]["lr"],
                 }
             )
+            wandb.log({"loss": loss.item(), "avg_loss": total_loss / batch_count, "lr": optimizer.param_groups[0]["lr"]})
             total_step += 1
             train_loss_list.append((total_step, loss.item()))
 
@@ -99,6 +102,7 @@ def train(
                 eval_loss_list.append((total_step, eval_loss))
                 onestep_mse_list.append((total_step, onestep_mse))
                 tqdm.write(f"\nEval: Loss: {eval_loss}, One Step MSE: {onestep_mse}")
+                wandb.log({"eval_loss": eval_loss, "onestep_mse": onestep_mse})
                 simulator.train()
 
             # do rollout on valid set
@@ -109,6 +113,7 @@ def train(
                 )
                 rollout_mse_list.append((total_step, rollout_mse))
                 tqdm.write(f"\nEval: Rollout MSE: {rollout_mse}")
+                wandb.log({"rollout_mse": rollout_mse})
                 simulator.train()
 
             if total_step % params["vis_interval"] == 0:
@@ -127,7 +132,8 @@ def train(
                 video_path = os.path.join(
                     params["output_path"], f"rollout_{total_step}.mp4"
                 )
-                anim.save(video_path)
+                anim.save(video_path, writer="ffmpeg", fps=120)
+                wandb.log({"rollout_video": wandb.Video(video_path, fps=120, format="mp4")})
                 tqdm.write(f"\nSaved video to {video_path}")
                 simulator.train()
 
@@ -144,26 +150,43 @@ def train(
                         f"checkpoint_{total_step}.pt",
                     ),
                 )
+                wandb.save(os.path.join(params["output_path"], "models", f"checkpoint_{total_step}.pt"))
     return train_loss_list, eval_loss_list, onestep_mse_list, rollout_mse_list
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("data_path")
+    parser.add_argument("--data_path", required=True)
     parser.add_argument("--epoch", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--noise", type=float, default=3e-4)
+    parser.add_argument("--window_size", type=int, default=7)
     parser.add_argument("--eval_interval", type=int, default=100000)
     parser.add_argument("--vis_interval", type=int, default=100000)
     parser.add_argument("--save_interval", type=int, default=100000)
     parser.add_argument("--rollout_interval", type=int, default=100000)
     parser.add_argument("--output_path", required=True)
+    parser.add_argument("--wandb_group", required=True) # experiment group name
+    parser.add_argument("--wandb_project", required=True) # project name
+    parser.add_argument("--env", required=True) # environment name (local, cedar, graham, etc)
     args = parser.parse_args()
 
     os.makedirs(args.output_path, exist_ok=True)
     os.makedirs(os.path.join(args.output_path, "models"), exist_ok=True)
+
+
+    matplotlib.use("Agg")
+
+    dataset_name = args.data_path.split("/")[-1]
+    config = vars(args)
+    wandb.init(
+        project=args.wandb_project,
+        group=args.wandb_group,
+        tags=[args.env, dataset_name],
+        config=config,
+    )
 
     train_dataset = dataset.OneStepDataset(
         args.data_path, "train", noise_std=args.noise

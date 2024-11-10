@@ -70,6 +70,7 @@ def preprocess(particle_type, position_seq, target_position, metadata, noise_std
         y=acceleration,
         pos=torch.cat(
             (normal_velocity_seq.reshape(normal_velocity_seq.size(0), -1), distance_to_boundary),
+            # (velocity_seq.reshape(velocity_seq.size(0), -1), distance_to_boundary),
             dim=-1,
         ),
     )
