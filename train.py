@@ -11,15 +11,16 @@ import rollout
 import visualize
 
 
-def oneStepMSE(simulator, dataloader, metadata, noise):
+def oneStepMSE(simulator, dataloader, metadata, noise, device="cpu"):
     """Returns two values, loss and MSE"""
     total_loss = 0.0
     total_mse = 0.0
     batch_count = 0
     simulator.eval()
     with torch.no_grad():
-        scale = torch.sqrt(torch.tensor(metadata["acc_std"]) ** 2 + noise**2)
+        scale = torch.sqrt(torch.tensor(metadata["acc_std"]) ** 2 + noise**2).to(device)
         for data in dataloader:
+            data = data.to(device)
             pred = simulator(data)
             mse = ((pred - data.y) * scale) ** 2
             mse = mse.sum(dim=-1).mean()
@@ -46,7 +47,7 @@ def rolloutMSE(simulator, dataset, noise, metadata):
 
 
 def train(
-    params, simulator, train_loader, valid_loader, valid_rollout_dataset, metadata
+    params, simulator, train_loader, valid_loader, valid_rollout_dataset, metadata, device="cpu"
 ):
     loss_fn = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(simulator.parameters(), lr=params["lr"])
@@ -68,8 +69,7 @@ def train(
         batch_count = 0
         for data in progress_bar:
             optimizer.zero_grad()
-            if torch.cuda.is_available():
-                data = data.cuda()
+            data = data.to(device)
             pred = simulator(data)
             # zero out the acceleration for boundary particles
             mask = data.x != 3
@@ -94,7 +94,7 @@ def train(
             if total_step % params["eval_interval"] == 0:
                 simulator.eval()
                 eval_loss, onestep_mse = oneStepMSE(
-                    simulator, valid_loader, metadata, params["noise"]
+                    simulator, valid_loader, metadata, params["noise"], device
                 )
                 eval_loss_list.append((total_step, eval_loss))
                 onestep_mse_list.append((total_step, onestep_mse))
@@ -188,8 +188,9 @@ def main():
     rollout_dataset = dataset.RolloutDataset(args.data_path, "valid")
 
     simulator = model.LearnedSimulator(hidden_size=32, n_mp_layers=2)
-    if torch.cuda.is_available():
-        simulator = simulator.cuda()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
+    simulator = simulator.to(device)
 
     params = vars(args)
     train_loss_list, eval_loss_list, onestep_mse_list, rollout_mse_list = train(
@@ -199,6 +200,7 @@ def main():
         valid_loader,
         rollout_dataset,
         train_dataset.metadata,
+        device
     )
 
 
