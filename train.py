@@ -47,7 +47,7 @@ def rolloutMSE(simulator, dataset, noise, metadata):
             rollout_out = rollout_out.permute(1, 0, 2)
             loss = (rollout_out - rollout_data["position"]) ** 2
             mask = rollout_data["particle_type"] != 3
-            loss = loss[mask]
+            loss = loss[:, mask, :]
             loss = loss.sum(dim=-1).mean()
             total_loss += loss.item()
             batch_count += 1
