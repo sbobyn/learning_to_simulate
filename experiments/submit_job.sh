@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# Check if the dataset argument is provided
+# check if script name provided
 if [ -z "$1" ]; then
-  echo "Error: No dataset specified."
-  echo "Usage: ./submit_job.sh <dataset_name>"
+  echo "Error: Args not provided."
+  echo "Usage: ./submit_job.sh <job_script>.sh <dataset_name>"
   exit 1
 fi
 
-dataset=$1
+# Check if the dataset argument is provided
+if [ -z "$2" ]; then
+  echo "Error: Args not provided."
+  echo "Usage: ./submit_job.sh <job_script>.sh <dataset_name>"
+  exit 1
+fi
+
+jobscript=$1
+dataset=$2
 
 # Define SLURM job parameters
 job_name="${dataset}_train"
@@ -28,4 +36,4 @@ sbatch -J "$job_name" \
        --time=$time_limit \
        --mail-user="stevenbobyn@gmail.com" \
        --mail-type=ALL \
-       ./cedar_test.sh $dataset
+       ./"$jobscript" "$dataset"

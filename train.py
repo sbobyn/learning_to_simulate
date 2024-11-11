@@ -210,6 +210,7 @@ def main():
     wandb.init(
         project=args.wandb_project,
         group=args.wandb_group,
+        entity="GAIDG_LAB",
         tags=[args.env, dataset_name],
         config=config,
     )
