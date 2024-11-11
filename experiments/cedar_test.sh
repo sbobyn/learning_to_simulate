@@ -1,32 +1,22 @@
 #!/bin/bash
 
-#SBATCH -J sample-waterdrop  # Job name
-#SBATCH -o sample-waterdrop.o%j     # Name of stdout output file
-#SBATCH -e sample-waterdrop.e%j     # Name of stderr error file
-#SBATCH --gres=gpu:1
-#SBATCH -N 1                     # Total # of nodes (must be 1 for serial)
-#SBATCH -n 1                 # Total # of mpi tasks (should be 1 for serial)
-#SBATCH --mem=8G
-#SBATCH --cpus-per-task=2 
-#SBATCH -t 00:15:00          # Run time (hh:mm:ss)
-#SBATCH --mail-user=<stevenbobyn@gmail.com>
-#SBATCH --mail-type=ALL
+if [ -z "$1" ]; then
+  echo "Error: No dataset specified."
+  echo "Usage: sbatch $0 <dataset_name>"
+  exit 1
+fi
 
-# fail on error
-set -e
-
-# start in slurm_scripts
-cd ../
-
-module purge
-module load python
-source venv/bin/activate
-
-dataset="WaterDrop"
+dataset=$1
 dataset_path="${SCRATCH}/224w-gns/datasets/$dataset"
 
 output_dir="${SCRATCH}/224w-gns/datasets/$dataset/output"
 mkdir -p $output_dir
+
+cd ../
+
+module purge
+module load python
+source ../224w-gns/venv/bin/activate
 
 python train.py \
     --data_path $dataset_path \

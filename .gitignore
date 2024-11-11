@@ -13,3 +13,5 @@ datasets/*
 # output dirs
 output/
 wandb/
+experiments/*.e*
+experiments/*.o*
