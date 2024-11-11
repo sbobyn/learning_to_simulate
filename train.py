@@ -4,13 +4,13 @@ import os
 import matplotlib
 import torch
 import torch_geometric as pyg
-import wandb
 from tqdm import tqdm
 
 import dataset
 import model
 import rollout
 import visualize
+import wandb
 
 
 def oneStepMSE(simulator, dataloader, metadata, noise, device="cpu"):
@@ -25,8 +25,12 @@ def oneStepMSE(simulator, dataloader, metadata, noise, device="cpu"):
             data = data.to(device)
             pred = simulator(data)
             mse = ((pred - data.y) * scale) ** 2
+            mask = data.x != 3
+            mse = mse[mask]
             mse = mse.sum(dim=-1).mean()
-            loss = ((pred - data.y) ** 2).mean()
+            loss = (pred - data.y) ** 2
+            loss = loss[mask]
+            loss = loss.mean()
             total_mse += mse.item()
             total_loss += loss.item()
             batch_count += 1
@@ -42,6 +46,8 @@ def rolloutMSE(simulator, dataset, noise, metadata):
             rollout_out = rollout.rollout(simulator, rollout_data, metadata, noise)
             rollout_out = rollout_out.permute(1, 0, 2)
             loss = (rollout_out - rollout_data["position"]) ** 2
+            mask = rollout_data["particle_type"] != 3
+            loss = loss[mask]
             loss = loss.sum(dim=-1).mean()
             total_loss += loss.item()
             batch_count += 1
@@ -79,10 +85,11 @@ def train(
             optimizer.zero_grad()
             data = data.to(device)
             pred = simulator(data)
-            # zero out the acceleration for boundary particles
+            # mask boundary particles out of loss
             mask = data.x != 3
-            pred = pred * mask.unsqueeze(-1).float()
-            loss = loss_fn(pred, data.y)
+            loss = loss_fn(pred, data.y, reduction="none")
+            loss = loss[mask]
+            loss = loss.mean()
             loss.backward()
             optimizer.step()
             scheduler.step()
