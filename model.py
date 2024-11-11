@@ -1,9 +1,8 @@
 import math
 
 import torch
-import torch_scatter
 import torch_geometric as pyg
-
+import torch_scatter
 
 NUM_PARTICLE_TYPES = 9
 

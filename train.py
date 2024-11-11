@@ -1,11 +1,11 @@
 import argparse
 import os
 
+import matplotlib
 import torch
 import torch_geometric as pyg
-from tqdm import tqdm
 import wandb
-import matplotlib
+from tqdm import tqdm
 
 import dataset
 import model
@@ -49,7 +49,13 @@ def rolloutMSE(simulator, dataset, noise, metadata):
 
 
 def train(
-    params, simulator, train_loader, valid_loader, valid_rollout_dataset, metadata, device="cpu"
+    params,
+    simulator,
+    train_loader,
+    valid_loader,
+    valid_rollout_dataset,
+    metadata,
+    device="cpu",
 ):
     loss_fn = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(simulator.parameters(), lr=params["lr"])
@@ -89,7 +95,13 @@ def train(
                     "lr": optimizer.param_groups[0]["lr"],
                 }
             )
-            wandb.log({"loss": loss.item(), "avg_loss": total_loss / batch_count, "lr": optimizer.param_groups[0]["lr"]})
+            wandb.log(
+                {
+                    "loss": loss.item(),
+                    "avg_loss": total_loss / batch_count,
+                    "lr": optimizer.param_groups[0]["lr"],
+                }
+            )
             total_step += 1
             train_loss_list.append((total_step, loss.item()))
 
@@ -133,7 +145,9 @@ def train(
                     params["output_path"], f"rollout_{total_step}.mp4"
                 )
                 anim.save(video_path, writer="ffmpeg", fps=120)
-                wandb.log({"rollout_video": wandb.Video(video_path, fps=120, format="mp4")})
+                wandb.log(
+                    {"rollout_video": wandb.Video(video_path, fps=120, format="mp4")}
+                )
                 tqdm.write(f"\nSaved video to {video_path}")
                 simulator.train()
 
@@ -150,32 +164,44 @@ def train(
                         f"checkpoint_{total_step}.pt",
                     ),
                 )
-                wandb.save(os.path.join(params["output_path"], "models", f"checkpoint_{total_step}.pt"))
+                wandb.save(
+                    os.path.join(
+                        params["output_path"], "models", f"checkpoint_{total_step}.pt"
+                    )
+                )
     return train_loss_list, eval_loss_list, onestep_mse_list, rollout_mse_list
 
 
 def main():
     parser = argparse.ArgumentParser()
+    # data and training stuff
     parser.add_argument("--data_path", required=True)
     parser.add_argument("--epoch", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--noise", type=float, default=3e-4)
-    parser.add_argument("--window_size", type=int, default=7)
+    # model stuff
+    parser.add_argument("--window_size", type=int, default=5)
+    parser.add_argument("--hidden_size", type=int, default=128)
+    parser.add_argument("--n_mp_layers", type=int, default=10)
+    parser.add_argument("--layernorm", action="store_true")
+    parser.add_argument("--dim", type=int, default=2)
+    # logging
     parser.add_argument("--eval_interval", type=int, default=100000)
     parser.add_argument("--vis_interval", type=int, default=100000)
     parser.add_argument("--save_interval", type=int, default=100000)
     parser.add_argument("--rollout_interval", type=int, default=100000)
     parser.add_argument("--output_path", required=True)
-    parser.add_argument("--wandb_group", required=True) # experiment group name
-    parser.add_argument("--wandb_project", required=True) # project name
-    parser.add_argument("--env", required=True) # environment name (local, cedar, graham, etc)
+    parser.add_argument("--wandb_group", required=True)  # experiment group name
+    parser.add_argument("--wandb_project", required=True)  # project name
+    parser.add_argument(
+        "--env", required=True
+    )  # environment name (local, cedar, graham, etc)
     args = parser.parse_args()
 
     os.makedirs(args.output_path, exist_ok=True)
     os.makedirs(os.path.join(args.output_path, "models"), exist_ok=True)
-
 
     matplotlib.use("Agg")
 
@@ -189,10 +215,16 @@ def main():
     )
 
     train_dataset = dataset.OneStepDataset(
-        args.data_path, "train", noise_std=args.noise
+        args.data_path,
+        "train",
+        noise_std=args.noise,
+        window_length=args.window_size + 2,  # extra 2 for vel, acc calcs
     )
     valid_dataset = dataset.OneStepDataset(
-        args.data_path, "valid", noise_std=args.noise
+        args.data_path,
+        "valid",
+        noise_std=args.noise,
+        window_length=args.window_size + 2,
     )
     train_loader = pyg.loader.DataLoader(
         train_dataset,
@@ -208,9 +240,15 @@ def main():
         pin_memory=True,
         num_workers=args.num_workers,
     )
-    rollout_dataset = dataset.RolloutDataset(args.data_path, "valid")
+    rollout_dataset = dataset.RolloutDataset(
+        args.data_path, "valid", window_length=args.window_size + 2
+    )
 
-    simulator = model.LearnedSimulator(hidden_size=32, n_mp_layers=2)
+    simulator = model.LearnedSimulator(
+        hidden_size=args.hidden_size,
+        n_mp_layers=args.n_mp_layers,
+        window_size=args.window_size,
+    )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
     simulator = simulator.to(device)
@@ -223,7 +261,7 @@ def main():
         valid_loader,
         rollout_dataset,
         train_dataset.metadata,
-        device
+        device,
     )
 
 
