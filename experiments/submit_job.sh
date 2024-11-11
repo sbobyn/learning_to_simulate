@@ -21,10 +21,10 @@ dataset=$2
 job_name="${dataset}_train"
 output_file="${dataset}_output.o%j"
 error_file="${dataset}_error.e%j"
-memory="8G"
+memory="16G"
 cpus_per_task=2
 gpu_count=1
-time_limit="00:15:00"
+time_limit="06:00:00"
 
 # Submit the job to SLURM
 sbatch -J "$job_name" \
