@@ -7,16 +7,16 @@ if [ -z "$1" ]; then
 fi
 
 dataset=$1
-dataset_path="${SCRATCH}/224w-gns/datasets/$dataset"
+dataset_path="${SCRATCH}/gns/datasets/$dataset"
 
-output_dir="${SCRATCH}/224w-gns/datasets/$dataset/output"
+output_dir="${SCRATCH}/gns/datasets/$dataset/output"
 mkdir -p $output_dir
 
 cd ../
 
 module purge
 module load python
-source ../224w-gns/venv/bin/activate
+source venv/bin/activate
 
 python train.py \
     --data_path $dataset_path \
