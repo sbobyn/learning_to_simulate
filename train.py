@@ -63,7 +63,7 @@ def train(
     metadata,
     device="cpu",
 ):
-    loss_fn = torch.nn.MSELoss()
+    loss_fn = torch.nn.MSELoss(reduction="none")
     optimizer = torch.optim.Adam(simulator.parameters(), lr=params["lr"])
     scheduler = torch.optim.lr_scheduler.ExponentialLR(
         optimizer, gamma=0.1 ** (1 / 5e6)
@@ -87,7 +87,7 @@ def train(
             pred = simulator(data)
             # mask boundary particles out of loss
             mask = data.x != 3
-            loss = loss_fn(pred, data.y, reduction="none")
+            loss = loss_fn(pred, data.y)
             loss = loss[mask]
             loss = loss.mean()
             loss.backward()
