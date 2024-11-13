@@ -14,6 +14,13 @@ if [ -z "$2" ]; then
   exit 1
 fi
 
+# Optional third argument for data fraction
+if [ -z "$3" ]; then
+  data_fraction=1.0
+else
+  data_fraction=$3
+fi
+
 jobscript=$1
 dataset=$2
 
@@ -36,4 +43,4 @@ sbatch -J "$job_name" \
        --time=$time_limit \
        --mail-user="stevenbobyn@gmail.com" \
        --mail-type=ALL \
-       ./"$jobscript" "$dataset"
+       ./"$jobscript" "$dataset" "$data_fraction"

@@ -188,6 +188,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--num_workers", type=int, default=2)
     parser.add_argument("--noise", type=float, default=3e-4)
+    parser.add_argument("--data_fraction", type=float, default=1.0)
     # model stuff
     parser.add_argument("--window_size", type=int, default=5)
     parser.add_argument("--hidden_size", type=int, default=128)
@@ -214,6 +215,21 @@ def main():
 
     dataset_name = args.data_path.split("/")[-1]
     config = vars(args)
+    train_dataset = dataset.OneStepDataset(
+        args.data_path,
+        "train",
+        noise_std=args.noise,
+        window_length=args.window_size + 2,  # extra 2 for vel, acc calcs
+    )
+    # only use fraction of training data
+    train_dataset = train_dataset[: int(len(train_dataset) * args.data_fraction)]
+    valid_dataset = dataset.OneStepDataset(
+        args.data_path,
+        "valid",
+        noise_std=args.noise,
+        window_length=args.window_size + 2,
+    )
+
     wandb.init(
         project=args.wandb_project,
         group=args.wandb_group,
@@ -221,19 +237,8 @@ def main():
         tags=[args.env, dataset_name],
         config=config,
     )
+    wandb.log({"dataset_size": len(train_dataset)})
 
-    train_dataset = dataset.OneStepDataset(
-        args.data_path,
-        "train",
-        noise_std=args.noise,
-        window_length=args.window_size + 2,  # extra 2 for vel, acc calcs
-    )
-    valid_dataset = dataset.OneStepDataset(
-        args.data_path,
-        "valid",
-        noise_std=args.noise,
-        window_length=args.window_size + 2,
-    )
     train_loader = pyg.loader.DataLoader(
         train_dataset,
         batch_size=args.batch_size,
