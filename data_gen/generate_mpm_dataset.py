@@ -43,6 +43,7 @@ for i, n_particles in enumerate(all_n_particles):
 
 os.makedirs(args.datapath, exist_ok=True)
 
+start = 0
 for split, n in [
     ("train", args.n_train),
     ("valid", args.n_valid),
@@ -50,7 +51,8 @@ for split, n in [
 ]:
     np.savez(
         f"{args.datapath}/positions_{split}.npz",
-        *all_simulations[:n],
+        *all_simulations[start : start + n],
     )
+    start += n
 
 print("Done!")
